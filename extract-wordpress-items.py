@@ -2,7 +2,7 @@
 
 ##############################################################################
 #
-# Module:  extract-wp-items.py
+# Module:  extract-wordpress-items.py
 #
 # Function:
 #   Extract Word Press <item> entries from a Word Press archive file.
