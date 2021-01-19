@@ -59,12 +59,13 @@ def StripDiviWpMeta(tree):
             if wpMetaKeyName.startswith("_et_") or wpMetaKeyName.startswith("et_"):
                 # we found one we don't like
                 tree.remove(wpMeta)
-                if gVerbose:
+                if gVerbose: # gVerbose:
                     print("removed: {:s}".format(wpMetaKeyName))
     return tree
 
 ### the top-level function
 def Main():
+    global gVerbose
     # parse the command line args
     args = ParseCommandArgs()
     gVerbose = args.verbose
