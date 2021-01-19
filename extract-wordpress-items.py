@@ -23,6 +23,8 @@ global gNS
 gNS = { "wp": "http://wordpress.org/export/1.2/",
         "content": "http://purl.org/rss/1.0/modules/content/",
         "excerpt": "http://wordpress.org/export/1.2/excerpt/" }
+global gVerbose
+gVerbose = False
 
 ### parse the command line to args.
 def ParseCommandArgs():
@@ -31,8 +33,11 @@ def ParseCommandArgs():
                         help="Input XML file")
     parser.add_argument("sPfxOutput", metavar="{outputFilePrefix}",
                         help="Prefix for names of generated output files")
-    parser.add_argument("--strip-divi-meta", action="store_true", 
-                        help="remove Divi wp:post_meta entries",
+    parser.add_argument("--strip-divi-meta", action="store_true",
+                        help="remove Divi wp:postmeta entries",
+                        default=False)
+    parser.add_argument("--verbose", "-v", action="store_true",
+                        help="verbose output",
                         default=False)
     return parser.parse_args()
 
@@ -54,13 +59,15 @@ def StripDiviWpMeta(tree):
             if wpMetaKeyName.startswith("_et_") or wpMetaKeyName.startswith("et_"):
                 # we found one we don't like
                 tree.remove(wpMeta)
-                print("removed: {:s}".format(wpMetaKeyName))
+                if gVerbose:
+                    print("removed: {:s}".format(wpMetaKeyName))
     return tree
 
 ### the top-level function
 def Main():
     # parse the command line args
     args = ParseCommandArgs()
+    gVerbose = args.verbose
 
     # read the input file
     root = ParseXmlFileKeepCDATA(args.hInput)
@@ -68,7 +75,8 @@ def Main():
     ### create a table t with one entry per <item>
     t = [p for p in root.findall("channel/item")]
 
-    print("Input: " + str(len(t)) + " items\n")
+    if gVerbose:
+        print("Input: " + str(len(t)) + " items\n")
 
     if args.strip_divi_meta:
         for item in t:
@@ -83,7 +91,8 @@ def Main():
             postname_part = "." + postname_item.text
 
         fname = args.sPfxOutput + "{:03d}".format(itemIndex) + postname_part + ".xml"
-        print("Output " + str(itemIndex) + ": " + fname)
+        if gVerbose:
+            print("Output " + str(itemIndex) + ": " + fname)
         with open(fname, "w") as f:
             # write the file; method xml needed to ensure CDATA goes out as such
             # encoding unicode needed to ensure this is a string rather than a sequence of bytes
