@@ -1,36 +1,50 @@
 #!/usr/bin/env python3
 
 import argparse
-# import xml.etree.ElementTree as ET
 from lxml import etree as ET
 
 ### parse the command line to args.
-parser = argparse.ArgumentParser(description="split up Word Press page or post archive")
-parser.add_argument("hInput", metavar="{inputFile}", type=argparse.FileType('r'))
-parser.add_argument("sPfxOutput", metavar="{outputPrefix}")
-args = parser.parse_args()
+def ParseCommandArgs():
+    parser = argparse.ArgumentParser(description="split up Word Press page or post archive")
+    parser.add_argument("hInput", metavar="{inputFile}", type=argparse.FileType('r'))
+    parser.add_argument("sPfxOutput", metavar="{outputPrefix}")
+    return parser.parse_args()
 
 ### read the file
-ETparse = ET.ETCompatXMLParser(remove_comments=False, strip_cdata=False)
-ET.set_default_parser(ETparse)
-doc = ET.parse(args.hInput)
-root = doc.getroot()
+def ParseFile(hInput):
+    # make sure we keep comments and CDATA marked as such.
+    ETparse = ET.ETCompatXMLParser(remove_comments=False, strip_cdata=False)
+    ET.set_default_parser(ETparse)
+    # parse the input
+    doc = ET.parse(hInput)
+    return doc.getroot()
 
-### create a table t with one entry per item
-t = [p for p in root.findall("channel/item")]
+### the top-level function
+def Main():
+    # parse the command line args
+    args = ParseCommandArgs()
 
-print("Input: " + str(len(t)) + " items\n")
+    # read the input file
+    root = ParseFile(args.hInput)
 
-### create separate files
-itemIndex = 0
-for item in t:
-    fname = args.sPfxOutput + str(itemIndex) + ".xml"
-    print("Output " + str(itemIndex) + ": " + fname)
-    #for content in item.findall("encoded"):
-    #    content.text = ET.CDATA(content.text)
-    with open(fname, "w") as f:
-        f.write(ET.tostring(item, encoding="unicode", method="xml"))
-        f.close()
-    itemIndex += 1
+    ### create a table t with one entry per <item>
+    t = [p for p in root.findall("channel/item")]
+
+    print("Input: " + str(len(t)) + " items\n")
+
+    ### create separate files for each item
+    itemIndex = 0
+    for item in t:
+        fname = args.sPfxOutput + str(itemIndex) + ".xml"
+        print("Output " + str(itemIndex) + ": " + fname)
+        with open(fname, "w") as f:
+            # write the file; method xml needed to ensure CDATA goes out as such
+            # encoding unicode needed to ensure this is a string rather than a sequence of bytes
+            f.write(ET.tostring(item, encoding="unicode", method="xml"))
+            f.close()
+        itemIndex += 1
+
+### do the work.
+Main()
 
 ### end
