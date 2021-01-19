@@ -26,9 +26,14 @@ gNS = { "wp": "http://wordpress.org/export/1.2/",
 
 ### parse the command line to args.
 def ParseCommandArgs():
-    parser = argparse.ArgumentParser(description="split up Word Press archive of pages or posts")
-    parser.add_argument("hInput", metavar="{inputXmlFile}", type=argparse.FileType('r'))
-    parser.add_argument("sPfxOutput", metavar="{outputFilePrefix}")
+    parser = argparse.ArgumentParser(description="split up Wor Press archive of pages or posts")
+    parser.add_argument("hInput", metavar="{inputXmlFile}", type=argparse.FileType('r'),
+                        help="Input XML file")
+    parser.add_argument("sPfxOutput", metavar="{outputFilePrefix}",
+                        help="Prefix for names of generated output files")
+    parser.add_argument("--strip-divi-meta", action="store_true", 
+                        help="remove Divi wp:post_meta entries",
+                        default=False)
     return parser.parse_args()
 
 ### read the file
@@ -39,6 +44,18 @@ def ParseXmlFileKeepCDATA(hInput):
     # parse the input
     doc = ET.parse(hInput)
     return doc.getroot()
+
+### remove Divi WpMeta tags
+def StripDiviWpMeta(tree):
+    for wpMeta in tree.findall("wp:postmeta", gNS):
+        wpMetaKey = wpMeta.find("wp:meta_key", gNS)
+        if wpMetaKey != None:
+            wpMetaKeyName = wpMetaKey.text
+            if wpMetaKeyName.startswith("_et_") or wpMetaKeyName.startswith("et_"):
+                # we found one we don't like
+                tree.remove(wpMeta)
+                print("removed: {:s}".format(wpMetaKeyName))
+    return tree
 
 ### the top-level function
 def Main():
@@ -53,6 +70,10 @@ def Main():
 
     print("Input: " + str(len(t)) + " items\n")
 
+    if args.strip_divi_meta:
+        for item in t:
+            StripDiviWpMeta(item)
+
     ### create separate files for each item
     itemIndex = 0
     for item in t:
@@ -61,7 +82,7 @@ def Main():
         if postname_item != None and postname_item.text != "":
             postname_part = "." + postname_item.text
 
-        fname = args.sPfxOutput + str(itemIndex) + postname_part + ".xml"
+        fname = args.sPfxOutput + "{:03d}".format(itemIndex) + postname_part + ".xml"
         print("Output " + str(itemIndex) + ": " + fname)
         with open(fname, "w") as f:
             # write the file; method xml needed to ensure CDATA goes out as such
