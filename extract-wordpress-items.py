@@ -11,7 +11,7 @@
 #   Copyright (C) 2021, MCCI Corporation. See accompanying LICENSE file
 #
 # Author:
-#   Terry Moore, MCCI   January, 20201
+#   Terry Moore, MCCI   January, 2021
 #
 ##############################################################################
 
@@ -28,7 +28,7 @@ gVerbose = False
 
 ### parse the command line to args.
 def ParseCommandArgs():
-    parser = argparse.ArgumentParser(description="split up Wor Press archive of pages or posts")
+    parser = argparse.ArgumentParser(description="split up WordPress archive of pages or posts")
     parser.add_argument("hInput", metavar="{inputXmlFile}", type=argparse.FileType('r'),
                         help="Input XML file")
     parser.add_argument("sPfxOutput", metavar="{outputFilePrefix}",
@@ -63,6 +63,15 @@ def StripDiviWpMeta(tree):
                     print("removed: {:s}".format(wpMetaKeyName))
     return tree
 
+### return the CDATA for a given key
+def GetItemValue(item, key):
+    global gNS
+    pValue = item.find(key, gNS)
+    if pValue != None:
+        return pValue.text
+    else:
+        return None
+
 ### the top-level function
 def Main():
     global gVerbose
@@ -86,12 +95,14 @@ def Main():
     ### create separate files for each item
     itemIndex = 0
     for item in t:
-        postname_item = item.find("wp:post_name", gNS)
-        postname_part = ""
-        if postname_item != None and postname_item.text != "":
-            postname_part = "." + postname_item.text
+        postname_value = GetItemValue(item, "wp:post_name")
+        posttype_value = GetItemValue(item, "wp:post_type")
 
-        fname = args.sPfxOutput + "{:03d}".format(itemIndex) + postname_part + ".xml"
+        postname_part = ""
+        if postname_value != None and postname_value != "":
+            postname_part = "." + postname_value
+
+        fname = args.sPfxOutput + posttype_value + "-{:03d}".format(itemIndex) + postname_part + ".xml"
         if gVerbose:
             print("Output " + str(itemIndex) + ": " + fname)
         with open(fname, "w") as f:
@@ -100,6 +111,26 @@ def Main():
             f.write(ET.tostring(item, encoding="unicode", method="xml"))
             f.close()
         itemIndex += 1
+
+    ### remove all items
+    for item in t:
+        item.getparent().remove(item)
+
+    ### find the channel item.
+    channel = root.find("channel")
+
+    ### write the resulting 
+    comment = ET.Comment("extract-wordpress-items.py: insert items here")
+    channel.insert(len(channel), comment)   # append comment
+
+    fname = args.sPfxOutput + "Header.xml"
+    with open(fname, "w") as f:
+        # write the file; method xml needed to ensure CDATA goes out as such
+        # encoding unicode needed to ensure this is a string rather than a sequence of bytes
+        f.write(ET.tostring(root, encoding="unicode", method="xml"))
+        f.close()
+
+### end Main()
 
 ### do the work.
 Main()
