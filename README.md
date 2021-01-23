@@ -24,7 +24,7 @@ For purposes of example, let's say your site has 3 pages; one named `about`, the
 
 ```console
 $ mkdir /tmp/myPages
-$ python3 extract-wordpress-items.py /tmp/myPages/ --verbose
+$ python3 extract-wordpress-items.py mysite.WordPress.2020-01-23.xml /tmp/myPages/ --verbose
 Input: 3 items
 
 Output 0: /tmp/myPages/000.about.xml
