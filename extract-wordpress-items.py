@@ -17,6 +17,7 @@
 
 import argparse
 from lxml import etree as ET
+from pathlib import Path
 
 ### Initialize our name spaces
 global gNS
@@ -28,23 +29,47 @@ gVerbose = False
 
 ### parse the command line to args.
 def ParseCommandArgs():
+    def checkPath(s):
+        result = Path(s)
+        if not result.is_dir():
+            raise ValueError("not a directory")
+
+        return result
+
     parser = argparse.ArgumentParser(description="split up WordPress archive of pages or posts")
-    parser.add_argument("hInput", metavar="{inputXmlFile}", type=argparse.FileType('r'),
-                        help="Input XML file")
-    parser.add_argument("sPfxOutput", metavar="{outputFilePrefix}",
-                        help="Prefix for names of generated output files")
-    parser.add_argument("--strip-divi-meta", action="store_true",
-                        help="remove Divi wp:postmeta entries",
-                        default=False)
-    parser.add_argument("--verbose", "-v", action="store_true",
-                        help="verbose output",
-                        default=False)
+    parser.add_argument(
+        "hInput",
+        metavar="{inputXmlFile}",
+        type=argparse.FileType('r'),
+        help="Input XML file"
+        )
+    parser.add_argument(
+        "hDirOutput", metavar="{outputDirectory}",
+        type=checkPath,
+        help="Where to put generated output files"
+        )
+    parser.add_argument(
+        "--strip-divi-meta",
+        action="store_true",
+        help="remove Divi wp:postmeta entries",
+        default=False
+        )
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="verbose output",
+        default=False
+        )
     return parser.parse_args()
 
 ### read the file
 def ParseXmlFileKeepCDATA(hInput):
     # make sure we keep comments and CDATA marked as such.
-    ETparse = ET.ETCompatXMLParser(remove_comments=False, strip_cdata=False)
+    ETparse = ET.ETCompatXMLParser(
+                remove_comments=False,
+                strip_cdata=False,
+                resolve_entities=False
+                )
     ET.set_default_parser(ETparse)
     # parse the input
     doc = ET.parse(hInput)
@@ -102,7 +127,7 @@ def Main():
         if postname_value != None and postname_value != "":
             postname_part = "." + postname_value
 
-        fname = args.sPfxOutput + posttype_value + "-{:03d}".format(itemIndex) + postname_part + ".xml"
+        fname = args.hDirOutput / (posttype_value + "-{:03d}".format(itemIndex) + postname_part + ".xml")
         if gVerbose:
             print("Output " + str(itemIndex) + ": " + fname)
         with open(fname, "w") as f:
@@ -119,11 +144,11 @@ def Main():
     ### find the channel item.
     channel = root.find("channel")
 
-    ### write the resulting 
+    ### write the resulting
     comment = ET.Comment("extract-wordpress-items.py: insert items here")
     channel.insert(len(channel), comment)   # append comment
 
-    fname = args.sPfxOutput + "Header.xml"
+    fname = args.hDirOutput / "Header.xml"
     with open(fname, "w") as f:
         # write the file; method xml needed to ensure CDATA goes out as such
         # encoding unicode needed to ensure this is a string rather than a sequence of bytes

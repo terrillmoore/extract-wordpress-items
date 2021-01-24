@@ -56,20 +56,43 @@ def ParseCommandArgs():
                 default=sys.stdout,
                 help="File to be created (default: stdout)"
                 )
-    parser.add_argument("--verbose", "-v", action="store_true",
-                        help="verbose output",
-                        default=False)
+    parser.add_argument(
+        "--verbose", "-v",
+        action="store_true",
+        help="verbose output",
+        default=False
+        )
+    parser.add_argument(
+        "--include", "-i",
+        metavar="{item}",
+        action="append",
+        help="<item> types to be included in output; if empty, all are",
+        default=[]
+        )
     args = parser.parse_args()
     return args
 
 ### read a file
 def ParseXmlFileKeepCDATA(hInput):
     # make sure we keep comments and CDATA marked as such.
-    ETparse = ET.ETCompatXMLParser(remove_comments=False, strip_cdata=False)
+    ETparse = ET.ETCompatXMLParser(
+                remove_comments=False,
+                strip_cdata=False,
+                resolve_entities=False
+                )
     ET.set_default_parser(ETparse)
     # parse the input
     doc = ET.parse(hInput)
     return doc.getroot()
+
+### return the CDATA for a given key
+def GetItemValue(item, key):
+    global gNS
+    pValue = item.find(key, gNS)
+    if pValue != None:
+        return pValue.text
+    else:
+        return None
 
 ### the top-level function
 def Main():
@@ -107,7 +130,10 @@ def Main():
             # parse the file
             item = ParseXmlFileKeepCDATA(f)
             f.close()
-            channel.insert(len(channel), item)
+            sPostType = GetItemValue(item, "wp:post_type")
+
+            if len(args.include) == 0 or sPostType in args.include:
+                channel.insert(len(channel), item)
 
         itemIndex += 1
 
