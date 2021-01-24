@@ -1,10 +1,10 @@
 # Extract and Compose WordPress Archives
 
-These tools allow simple roundtrippig of data between a WordPress content database and git-controlled files on the local machine. They are very much works in progress.
+These tools allow simple roundtrippig of data between a WordPress content database and git-controlled files on the local machine.
 
 ## Motivation
 
-HTML stored in a WordPress database may have a variety of problems (typos, out-of-date '™' versus '&reg;' references, outdated company names, and so forth. It's much easier to fix such things using text processing tools, but hard to turn such tools loose against the database. Furthermore, a text processing flow allows the use of git, which in turn allows review and collaboration.
+HTML stored in a WordPress database may have a variety of problems (typos, out-of-date '™' versus '&reg;' references, outdated company names, and so forth. It's much easier to fix such things using text processing tools, but hard to turn such tools loose against the database. Furthermore, a text processing flow allows the use of git, which in turn allows careful step-by-step review and collaboration.
 
 Although it's technically possible to edit a WordPress XML archive directly, it's quite unpleasant.
 
@@ -76,6 +76,18 @@ To use this, you must make two changes in your WordPress set up.
 6. Use WordPress Tools>Import to update your Flywheel `local` image of the repo.
 
 ## Meta
+
+### Author
+
+Terry Moore, MCCI Corporation
+
+### Status
+
+2021-01-23: These tools are very much works in progress. However, I successfully used them on MCCI's website to make a number of site-wide changes, check them with Flywheel `local`, and then updated the MCCI site with the results. This was much less painful than using the on-line WordPress editor -- I could use Visual Studio Code, command-line tools like `grep` and `aspell`, etc. Since I've only used it in my use case, it's possible that there are ugly mistakes that I've not yet encountered.
+
+### Future Directions
+
+It is clear that it would be even more convenient to further split each `page` and `post` item so that the `<content:encoded>` `CDATA` is placed into a separate `.html` file, parallel to the item's `.xml` file. This would allow Visual Studio Code (or other editor) to apply syntax analysis to the HTML body.
 
 ### Prerequisites
 
