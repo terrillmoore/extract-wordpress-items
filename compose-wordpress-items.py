@@ -94,6 +94,25 @@ def GetItemValue(item, key):
     else:
         return None
 
+### Eliminate duplicate WP meta entries
+def DropDuplicateWpMetaEntries(item):
+    global gNS
+    tSeenKeys = dict()
+    for wpMeta in item.findall("wp:postmeta", gNS):
+        wpMetaKey = wpMeta.find("wp:meta_key", gNS)
+        if wpMetaKey != None:
+            wpMetaKeyName = wpMetaKey.text
+            if wpMetaKeyName in tSeenKeys:
+                # we found one we don't like
+                item.remove(wpMeta)
+                if gVerbose: # gVerbose:
+                    print("removed duplicate: {:s}".format(wpMetaKeyName))
+            else:
+                tSeenKeys[wpMetaKeyName] = True
+        else:
+            # we don't like not having a meta_key; remove node
+            item.remove(wpMeta)
+
 ### the top-level function
 def Main():
     global gVerbose
@@ -143,6 +162,7 @@ def Main():
             sPostType = GetItemValue(item, "wp:post_type")
 
             if len(args.include) == 0 or sPostType in args.include:
+                DropDuplicateWpMetaEntries(item)
                 channel.insert(len(channel), item)
 
         itemIndex += 1
