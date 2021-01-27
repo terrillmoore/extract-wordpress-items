@@ -14,7 +14,7 @@ python3 {switches} extract-wordpress-items.py input-file-name output-dir
 
 `input-file-name` is the name of the file to be read. It should be a WordPress export archive of pages or posts. It should be more or less correct.
 
-`output-dir` is the name of the directory where the output files are to be written. It must already exist. The filename will be either  _`prefix.#.post_name.xml`_, if a non-empty `<wp:post_name>` element is found; or  _`prefix.#.xml`_ otherwise. In any case _`#`_ will be changed to the zero-origin index of the resulting file.
+`output-dir` is the name of the directory where the output files are to be written. It must already exist. The filename will be either  _`prefix.#.post_name.xml`_, if a non-empty `<wp:post_name>` element is found; or  _`prefix.#.xml`_ otherwise. In any case _`#`_ will be changed to the post_id from the input file.
 
 Recognized switches:
 
@@ -35,11 +35,11 @@ $ mkdir /tmp/myPages
 $ python3 extract-wordpress-items.py mysite.WordPress.2020-01-23.xml /tmp/myPages/ --verbose
 Input: 3 items
 
-Output 0: /tmp/myPages/page-0000.about.xml
-Output 1: /tmp/myPages/page-0001.contact.xml
-Output 2: /tmp/myPages/page-0002.xml
+Output 0: /tmp/myPages/page-17.about.xml
+Output 1: /tmp/myPages/page-131.contact.xml
+Output 2: /tmp/myPages/page-4.xml
 $ ls /tmp/myPages
-Header.xml page-0000.about.xml  page-0001.contact.xml  page-0002.xml
+Header.xml page-131.about.xml  page-17.contact.xml  page-4.xml
 $
 ```
 

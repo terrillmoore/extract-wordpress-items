@@ -119,21 +119,29 @@ def Main():
 
     ### create separate files for each item
     itemIndex = 0
+    itemSkipped = 0
     for item in t:
         postname_value = GetItemValue(item, "wp:post_name")
         posttype_value = GetItemValue(item, "wp:post_type")
+        postid_value = GetItemValue(item, "wp:post_id")
+
+        if postid_value == None:
+            itemSkipped += 1
+            if gVerbose:
+                print("Item " + itemIndex + "skiped, no post_id")
+            continue
 
         postname_part = ""
         if postname_value != None and postname_value != "":
             postname_part = "." + postname_value
 
-        fname = args.hDirOutput / (posttype_value + "-{:03d}".format(itemIndex) + postname_part + ".xml")
+        fname = args.hDirOutput / (posttype_value + "-" + postid_value + postname_part + ".xml")
         if gVerbose:
             print("Output " + str(itemIndex) + ": " + fname)
         with open(fname, "w") as f:
             # write the file; method xml needed to ensure CDATA goes out as such
             # encoding unicode needed to ensure this is a string rather than a sequence of bytes
-            f.write(ET.tostring(item, encoding="unicode", method="xml"))
+            f.write(ET.tostring(item, encoding="unicode", method="xml").rstrip())
             f.close()
         itemIndex += 1
 

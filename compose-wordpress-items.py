@@ -109,8 +109,18 @@ def Main():
         root = ParseXmlFileKeepCDATA(f)
         f.close()
 
-    ### create a sorted table of file names
-    t = sorted(inDir.glob("*.xml"))
+    ### create a sorted table of file names. These are assumed
+    ### to be of the form {type}-{post_id}[.suffix].xml
+    ### We create a key of the form {type}-00..{post-id},
+    ### where enough zeroes are inserted to make a 10-digit field.
+    def wpKey(path):
+        t = list(path.stem.partition('-'))
+        u = list(t[2].partition('.'))
+        u[0] = u[0].rjust(10, '0')
+        t[2] = "".join(u)
+        return "".join(t)
+
+    t = sorted(inDir.glob("*-*.xml"), key=wpKey)
 
     if gVerbose:
         print("Input: " + str(len(t)) + " files")

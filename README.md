@@ -51,7 +51,7 @@ To use this, you must make two changes in your WordPress set up.
 
 ### Updating your content directory from WordPress
 
-1. Using WordPress wp-admin>Tools>Export, create a full archive from the Firefly `local` image. (You can also do a subset, but my normal workflow is the full site.)
+1. Using WordPress wp-admin>Tools>Export, create a full archive from the Flywheel `local` image. (You can also do a subset, but my normal workflow is the full site.)
 
 2. Extract to your working git repository directory.
 
