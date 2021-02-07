@@ -97,6 +97,26 @@ def GetItemValue(item, key):
     else:
         return None
 
+### Eliminate duplicate WP meta entries
+def DropDuplicateWpMetaEntries(item):
+    global gNS
+    tSeenKeys = dict()
+    for wpMeta in item.findall("wp:postmeta", gNS):
+        wpMetaKey = wpMeta.find("wp:meta_key", gNS)
+        if wpMetaKey != None:
+            wpMetaKeyName = wpMetaKey.text
+            if wpMetaKeyName in tSeenKeys:
+                # we found one we don't like
+                item.remove(wpMeta)
+                if gVerbose: # gVerbose:
+                    print("removed duplicate: {:s}".format(wpMetaKeyName))
+            else:
+                tSeenKeys[wpMetaKeyName] = True
+        else:
+            # we don't like not having a meta_key; remove node
+            item.remove(wpMeta)
+
+
 ### the top-level function
 def Main():
     global gVerbose
@@ -136,6 +156,9 @@ def Main():
             postname_part = "." + postname_value
 
         fname = args.hDirOutput / (posttype_value + "-" + postid_value + postname_part + ".xml")
+
+        DropDuplicateWpMetaEntries(item)
+
         if gVerbose:
             print("Output " + str(itemIndex) + ": " + fname)
         with open(fname, "w") as f:
