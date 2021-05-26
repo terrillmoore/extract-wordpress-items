@@ -26,6 +26,8 @@ gNS = { "wp": "http://wordpress.org/export/1.2/",
         "excerpt": "http://wordpress.org/export/1.2/excerpt/" }
 global gVerbose
 gVerbose = False
+global gSplitHtml
+gSplitHtml = True
 
 ### parse the command line to args.
 def ParseCommandArgs():
@@ -58,6 +60,12 @@ def ParseCommandArgs():
         "--verbose", "-v",
         action="store_true",
         help="verbose output",
+        default=False
+        )
+    parser.add_argument(
+        "--combined-xml-html", "-c",
+        action="store_true",
+        help="use older 'lots of xml files' approach",
         default=False
         )
     return parser.parse_args()
@@ -97,6 +105,16 @@ def GetItemValue(item, key):
     else:
         return None
 
+### set the CDATA for a given key
+def SetItemValue(item, key, value):
+    global gNS
+    pValue = item.find(key, gNS)
+    if pValue != None:
+        pValue.text = value
+        return True
+    else:
+        return False
+
 ### Eliminate duplicate WP meta entries
 def DropDuplicateWpMetaEntries(item):
     global gNS
@@ -116,14 +134,61 @@ def DropDuplicateWpMetaEntries(item):
             # we don't like not having a meta_key; remove node
             item.remove(wpMeta)
 
+### write file as combined xml/html
+def writeFileCombined(item, itemIndex, postname_part, posttype_value, postid_value, args):
+    fname = args.hDirOutput / (posttype_value + "-" + postid_value + postname_part + ".xml")
+
+    if gVerbose:
+        print("Output " + str(itemIndex) + ": " + fname)
+    with open(fname, "w") as f:
+        # write the file; method xml needed to ensure CDATA goes out as such
+        # encoding unicode needed to ensure this is a string rather than a sequence of bytes
+        f.write(ET.tostring(item, encoding="unicode", method="xml").rstrip())
+        f.close()
+
+def writeFileSplit(item, itemIndex, postname_part, posttype_value, postid_value, args):
+    xmlFname = args.hDirOutput / "xml" / (posttype_value + "-" + postid_value + postname_part + ".xml")
+    htmlContentFname = args.hDirOutput / "html" / (posttype_value + "-" + postid_value + postname_part + "-content.html")
+    htmlExcerptFname = args.hDirOutput / "html" / (posttype_value + "-" + postid_value + postname_part + "-excerpt.html")
+
+    if gVerbose:
+        print("Output " + str(itemIndex) + ": " + xmlFname + ", " + htmlExcerptFname)
+
+    # extract the HTML cdata
+    htmlContent = GetItemValue(item, "content:encoded")
+    htmlExcerpt = GetItemValue(item, "excerpt:encoded")
+    SetItemValue(item, "content:encoded", "")
+    SetItemValue(item, "excerpt:encoded", "")
+
+    with open(xmlFname, "w") as f:
+        f.write(ET.tostring(item, encoding="unicode", method="xml").rstrip())
+        f.close()
+
+    with open(htmlContentFname, "w") as f:
+        f.write(htmlContent)
+        f.close()
+
+    with open(htmlExcerptFname, "w") as f:
+        f.write(htmlExcerpt)
+        f.close()
+
+### write file
+def writeFile(item, itemIndex, postname_part, posttype_value, postid_value, args):
+    global gSplitHtml
+    if gSplitHtml:
+        writeFileSplit(item, itemIndex, postname_part, posttype_value, postid_value, args)
+    else:
+        writeFileCombined(item, itemIndex, postname_part, posttype_value, postid_value, args)
+#end writeFile
 
 ### the top-level function
 def Main():
     global gVerbose
+    global gSplitHtml
     # parse the command line args
     args = ParseCommandArgs()
     gVerbose = args.verbose
-
+    gSplitHtml = not args.combined_xml_html
     # read the input file
     root = ParseXmlFileKeepCDATA(args.hInput)
 
@@ -155,17 +220,10 @@ def Main():
         if postname_value != None and postname_value != "":
             postname_part = "." + postname_value
 
-        fname = args.hDirOutput / (posttype_value + "-" + postid_value + postname_part + ".xml")
-
         DropDuplicateWpMetaEntries(item)
 
-        if gVerbose:
-            print("Output " + str(itemIndex) + ": " + fname)
-        with open(fname, "w") as f:
-            # write the file; method xml needed to ensure CDATA goes out as such
-            # encoding unicode needed to ensure this is a string rather than a sequence of bytes
-            f.write(ET.tostring(item, encoding="unicode", method="xml").rstrip())
-            f.close()
+        writeFile(item, itemIndex, postname_part, posttype_value, postid_value, args)
+
         itemIndex += 1
 
     ### remove all items

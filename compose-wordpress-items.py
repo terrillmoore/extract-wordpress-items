@@ -16,9 +16,10 @@
 ##############################################################################
 
 import argparse
-import sys
-from pathlib import Path
 from lxml import etree as ET
+from pathlib import Path
+import re
+import sys
 
 ### Initialize our name spaces
 global gNS
@@ -29,6 +30,8 @@ global gVerbose
 gVerbose = False
 global gHeaderName
 gHeaderName = "Header.xml"
+global gSplitHtml
+gSplitHtml = True
 
 ### parse the command line to args.
 def ParseCommandArgs():
@@ -69,6 +72,12 @@ def ParseCommandArgs():
         help="<item> types to be included in output; if empty, all are",
         default=[]
         )
+    parser.add_argument(
+        "--combined-xml-html", "-c",
+        action="store_true",
+        help="use older 'lots of xml files' approach",
+        default=False
+        )
     args = parser.parse_args()
     return args
 
@@ -94,6 +103,17 @@ def GetItemValue(item, key):
     else:
         return None
 
+### set the CDATA for a given key
+def SetItemValue(item, key, value):
+    global gNS
+    pValue = item.find(key, gNS)
+    if pValue != None:
+        pValue.text = ET.CDATA(value)
+        return True
+    else:
+        print(f"couldn't find {key} to insert {value}")
+        return False
+
 ### Eliminate duplicate WP meta entries
 def DropDuplicateWpMetaEntries(item):
     global gNS
@@ -113,12 +133,64 @@ def DropDuplicateWpMetaEntries(item):
             # we don't like not having a meta_key; remove node
             item.remove(wpMeta)
 
+### get XML and HTML in the combo form
+def getXmlAndHtmlCombined(filepath):
+    with open(filepath, "r") as f:
+        # parse the file
+        item = ParseXmlFileKeepCDATA(f)
+        f.close()
+        return item
+
+### get XML and HTML from separate files
+def getXmlAndHtmlSplit(filepath):
+    item = None
+    with open(filepath, "r") as f:
+        # parse the file
+        item = ParseXmlFileKeepCDATA(f)
+        f.close()
+
+    htmlContentFile = re.sub(r"/xml/", r"/html/", re.sub(r"\.xml$", r'-content.html', str(filepath)))
+    f = None
+    try:
+        f = open(htmlContentFile, "r")
+    except:
+        pass
+
+    if f != None:
+        htmlContents = f.read()
+        SetItemValue(item, "content:encoded", htmlContents)
+        f.close()
+        f = None
+
+    htmlExcerptFile = re.sub(r"/xml/", r"/html/", re.sub(r"\.xml$", r'-excerpt.html', str(filepath)))
+    try:
+        f = open(htmlExcerptFile, "r")
+    except:
+        pass
+
+    if f != None:
+        htmlExceprt = f.read()
+        SetItemValue(item, "excerpt:encoded", htmlExceprt)
+        f.close()
+
+    return item
+
+### get Xml and Html
+def getXmlAndHtml(filepath):
+    if gSplitHtml:
+        return getXmlAndHtmlSplit(filepath)
+    else:
+        return getXmlAndHtmlCombined(filepath)
+
 ### the top-level function
 def Main():
     global gVerbose
+    global gSplitHtml
+
     # parse the command line args
     args = ParseCommandArgs()
     gVerbose = args.verbose
+    gSplitHtml = not args.combined_xml_html
 
     # check whether we have a header file
     inDir = args.hInputDir
@@ -139,7 +211,12 @@ def Main():
         t[2] = "".join(u)
         return "".join(t)
 
-    t = sorted(inDir.glob("*-*.xml"), key=wpKey)
+    t = None
+    if not gSplitHtml:
+        t = sorted(inDir.glob("*-*.xml"), key=wpKey)
+    else:
+        inXmlDir = inDir / "xml"
+        t = sorted(inXmlDir.glob("*-*.xml"), key=wpKey)
 
     if gVerbose:
         print("Input: " + str(len(t)) + " files")
@@ -155,15 +232,12 @@ def Main():
         if gVerbose:
             print("Read: " + filepath.name)
 
-        with open(filepath, "r") as f:
-            # parse the file
-            item = ParseXmlFileKeepCDATA(f)
-            f.close()
-            sPostType = GetItemValue(item, "wp:post_type")
+        item = getXmlAndHtml(filepath)
+        sPostType = GetItemValue(item, "wp:post_type")
 
-            if len(args.include) == 0 or sPostType in args.include:
-                DropDuplicateWpMetaEntries(item)
-                channel.insert(len(channel), item)
+        if len(args.include) == 0 or sPostType in args.include:
+            DropDuplicateWpMetaEntries(item)
+            channel.insert(len(channel), item)
 
         itemIndex += 1
 
