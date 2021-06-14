@@ -143,17 +143,20 @@ def getXmlAndHtmlCombined(filepath):
 
 ### get XML and HTML from separate files
 def getXmlAndHtmlSplit(filepath):
+    global gVerbose
     item = None
     with open(filepath, "r") as f:
         # parse the file
         item = ParseXmlFileKeepCDATA(f)
         f.close()
 
-    htmlContentFile = re.sub(r"/xml/", r"/html/", re.sub(r"\.xml$", r'-content.html', str(filepath)))
+    htmlContentFile = re.sub(r"\bxml/", r"html/", re.sub(r"\.xml$", r'-content.html', str(filepath)))
     f = None
     try:
         f = open(htmlContentFile, "r")
     except:
+        if gVerbose:
+            print(f"could not find: {htmlContentFile} (XML: {str(filepath)})")
         pass
 
     if f != None:
@@ -162,7 +165,7 @@ def getXmlAndHtmlSplit(filepath):
         f.close()
         f = None
 
-    htmlExcerptFile = re.sub(r"/xml/", r"/html/", re.sub(r"\.xml$", r'-excerpt.html', str(filepath)))
+    htmlExcerptFile = re.sub(r"\bxml/", r"html/", re.sub(r"\.xml$", r'-excerpt.html', str(filepath)))
     try:
         f = open(htmlExcerptFile, "r")
     except:
