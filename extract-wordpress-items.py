@@ -139,7 +139,7 @@ def writeFileCombined(item, itemIndex, postname_part, posttype_value, postid_val
     fname = args.hDirOutput / (posttype_value + "-" + postid_value + postname_part + ".xml")
 
     if gVerbose:
-        print("Output " + str(itemIndex) + ": " + fname)
+        print("Output " + str(itemIndex) + ": " + str(fname))
     with open(fname, "w") as f:
         # write the file; method xml needed to ensure CDATA goes out as such
         # encoding unicode needed to ensure this is a string rather than a sequence of bytes
@@ -152,7 +152,7 @@ def writeFileSplit(item, itemIndex, postname_part, posttype_value, postid_value,
     htmlExcerptFname = args.hDirOutput / "html" / (posttype_value + "-" + postid_value + postname_part + "-excerpt.html")
 
     if gVerbose:
-        print("Output " + str(itemIndex) + ": " + xmlFname + ", " + htmlExcerptFname)
+        print("Output " + str(itemIndex) + ": " + str(xmlFname) + ", " + str(htmlContentFname) + ", " + str(htmlExcerptFname))
 
     # extract the HTML cdata
     htmlContent = GetItemValue(item, "content:encoded")
@@ -198,6 +198,11 @@ def Main():
     if gVerbose:
         print("Input: " + str(len(t)) + " items\n")
 
+    ### in split mode, make sure the xml and html subdirectories exist
+    if gSplitHtml:
+        (args.hDirOutput / "xml").mkdir(exist_ok=True)
+        (args.hDirOutput / "html").mkdir(exist_ok=True)
+
     if args.strip_divi_meta:
         for item in t:
             StripDiviWpMeta(item)
@@ -213,7 +218,7 @@ def Main():
         if postid_value == None:
             itemSkipped += 1
             if gVerbose:
-                print("Item " + itemIndex + "skiped, no post_id")
+                print("Item " + str(itemIndex) + " skipped, no post_id")
             continue
 
         postname_part = ""

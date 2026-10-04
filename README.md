@@ -57,7 +57,7 @@ To use this, you must make two changes in your WordPress set up.
 
     ```bash
     cd {path-to-repo}
-    python3 {path-to-script}/extract-wordpress-items.py . --strip-divi
+    python3 {path-to-script}/extract-wordpress-items.py --strip-divi-meta {path-to-archive}.xml .
     ```
 3. Capture any changes.
 
@@ -85,9 +85,9 @@ Terry Moore, MCCI Corporation
 
 2021-01-23: These tools are very much works in progress. However, I successfully used them on MCCI's website to make a number of site-wide changes, check them with Flywheel `local`, and then updated the MCCI site with the results. This was much less painful than using the on-line WordPress editor -- I could use Visual Studio Code, command-line tools like `grep` and `aspell`, etc. Since I've only used it in my use case, it's possible that there are ugly mistakes that I've not yet encountered.
 
-### Future Directions
+### Layout
 
-It is clear that it would be even more convenient to further split each `page` and `post` item so that the `<content:encoded>` `CDATA` is placed into a separate `.html` file, parallel to the item's `.xml` file. This would allow Visual Studio Code (or other editor) to apply syntax analysis to the HTML body.
+By default, the tools place each item's `<content:encoded>` and `<excerpt:encoded>` `CDATA` in separate `.html` files under `html/`, parallel to the item's `.xml` file under `xml/`. This allows Visual Studio Code (or other editor) to apply syntax analysis to the HTML body. The `--combined-xml-html` switch selects the older layout, with the HTML inside each `.xml` file.
 
 ### Prerequisites
 
