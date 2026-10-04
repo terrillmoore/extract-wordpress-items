@@ -248,7 +248,6 @@ def Main():
     # method xml needed to ensure CDATA goes out as such
     # encoding unicode needed to ensure this is a string rather than a sequence of bytes
     args.hOutputFile.write(ET.tostring(root, encoding="unicode", method="xml"))
-    f.close()
 
 ### end Main()
 
