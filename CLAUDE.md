@@ -24,7 +24,7 @@ The default ("split") layout:
 
 `-c` / `--combined-xml-html` selects the older layout: every item as one `.xml` file directly in `{outdir}`, HTML left inside the CDATA. Pass the same flag to both scripts.
 
-The extract script does not create `{outdir}/xml` or `{outdir}/html`; they must exist before it runs.
+`{outdir}` must exist; in split mode the extract script creates `xml/` and `html/` under it.
 
 ## How the round trip works
 
@@ -40,11 +40,6 @@ The namespace map `gNS` (`wp`, `content`, `excerpt`) and the helpers `ParseXmlFi
 ## Re-importing into WordPress
 
 Import needs the WordPress Importer plugin plus `wordpress-import-update.php` (https://gist.github.com/terrillmoore/70f7fefde462dc632515db28cc78a07a) in `wp-content/mu-plugins`; without that plugin the importer skips items that already exist. The author's workflow uses a Flywheel `local` copy of the site.
-
-## Known problems in the code
-
-- Verbose paths in extract concatenate `str` with `Path` or `int` (`"Output " + ... + fname`, `"Item " + itemIndex`) and raise `TypeError` when `-v` is given.
-- The README's example uses `--strip-divi`; the real flag is `--strip-divi-meta`. `doc/*.md` does not yet describe the split layout or `-c`.
 
 ## Conventions
 
